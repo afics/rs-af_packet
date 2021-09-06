@@ -47,6 +47,8 @@ pub struct RingSettings {
     ///PACKET_FANOUT_HASH will pin flows to individual threads, PACKET_FANOUT_LB will distribute
     ///them across multiple threads
     pub fanout_method: c_int,
+    /// Needs to be specified manually to capture traffic from multiple interfaces
+    pub fanout_group_id: c_int,
     ///Lower-level settings including block size, also enable/disable filling RXHASH in packet data
     pub ring_settings: tpacket3::TpacketReq3,
 }
@@ -56,6 +58,7 @@ impl Default for RingSettings {
         RingSettings {
             if_name: String::from("eth0"),
             fanout_method: PACKET_FANOUT_HASH,
+            fanout_group_id: unsafe { getpid() } & 0xFFFF,
             ring_settings: tpacket3::TpacketReq3::default(),
         }
     }
@@ -171,7 +174,7 @@ impl Ring {
         ring.socket.setsockopt(PACKET_RX_RING, ring.opts.clone())?;
         ring.mmap_rx_ring()?;
         ring.bind_rx_ring()?;
-        let fanout = (unsafe { getpid() } & 0xFFFF) | (settings.fanout_method << 16);
+        let fanout = settings.fanout_group_id | (settings.fanout_method << 16);
         ring.socket.setsockopt(PACKET_FANOUT, fanout)?;
         Ok(ring)
     }
