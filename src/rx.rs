@@ -23,6 +23,15 @@ const PACKET_FANOUT: c_int = 18;
 
 pub const PACKET_FANOUT_HASH: c_int = 0;
 pub const PACKET_FANOUT_LB: c_int = 1;
+pub const PACKET_FANOUT_CPU: c_int = 2;
+pub const PACKET_FANOUT_ROLLOVER: c_int = 3;
+pub const PACKET_FANOUT_RND: c_int = 4;
+pub const PACKET_FANOUT_QM: c_int = 5;
+pub const PACKET_FANOUT_CBPF: c_int = 6;
+pub const PACKET_FANOUT_EBPF: c_int = 7;
+pub const PACKET_FANOUT_FLAG_ROLLOVER: c_int = 0x1000;
+pub const PACKET_FANOUT_FLAG_UNIQUEID: c_int = 0x2000;
+pub const PACKET_FANOUT_FLAG_DEFRAG: c_int = 0x8000;
 
 const PACKET_HOST: u8 = 0;
 const PACKET_BROADCAST: u8 = 1;
@@ -223,7 +232,7 @@ impl Ring {
 
         //get the size before we change the pointer type
         let size = mem::size_of_val(&sa);
-        //we have to do this transmute or similar because Linux uses multiple sockaddr_ 
+        //we have to do this transmute or similar because Linux uses multiple sockaddr_
         //family structs and casts them to sockaddr after populating them
         let addr_ptr = unsafe { mem::transmute::<*mut sockaddr_ll, *mut sockaddr>(&mut sa) };
 
