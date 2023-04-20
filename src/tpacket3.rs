@@ -1,5 +1,6 @@
 use libc::{c_int, c_uint};
 use nom::number::complete::{le_u16, le_u32, le_u64};
+use nom::IResult;
 
 pub const TP_STATUS_KERNEL: u8 = 0;
 pub const TP_STATUS_USER: u8 = 1;
@@ -106,71 +107,88 @@ impl Default for TpacketReq3 {
 }
 
 #[inline]
-named!(
-    pub get_tpacket_block_desc<TpacketBlockDesc>,
-    do_parse!(
-        version: le_u32 >> offset_to_priv: le_u32 >> hdr: get_tpacket_bd_header
-            >> (TpacketBlockDesc {
-                version,
-                offset_to_priv,
-                hdr
-            })
-    )
-);
+// get_tpacket_block_desc Function  fn(&[u8]) -> Result<(&[u8], TpacketBlockDesc), Err<(&[u8], ErrorKind)>>
+pub fn get_tpacket_block_desc(input: &[u8]) -> IResult<&[u8], TpacketBlockDesc> {
+    let (input, version) = le_u32(input)?;
+    let (input, offset_to_priv) = le_u32(input)?;
+    let (input, hdr) = get_tpacket_bd_header(input)?;
+
+    Ok((
+        input,
+        TpacketBlockDesc {
+            version,
+            offset_to_priv,
+            hdr,
+        },
+    ))
+
+    // )
+}
 
 #[inline]
-named!(
-    get_tpacket_bd_header<TpacketBDHeader>,
-    do_parse!(
-        block_status: le_u32
-            >> num_pkts: le_u32
-            >> offset_to_first_pkt: le_u32
-            >> blk_len: le_u32
-            >> seq_num: le_u64
-            >> ts_first_pkt: get_tpacket_bdts
-            >> ts_last_pkt: get_tpacket_bdts
-            >> (TpacketBDHeader {
-                block_status,
-                num_pkts,
-                offset_to_first_pkt,
-                blk_len,
-                seq_num,
-                ts_first_pkt,
-                ts_last_pkt
-            })
-    )
-);
+pub fn get_tpacket_bd_header(input: &[u8]) -> IResult<&[u8], TpacketBDHeader> {
+    let (input, block_status) = le_u32(input)?;
+    let (input, num_pkts) = le_u32(input)?;
+    let (input, offset_to_first_pkt) = le_u32(input)?;
+    let (input, blk_len) = le_u32(input)?;
+    let (input, seq_num) = le_u64(input)?;
+    let (input, ts_first_pkt) = get_tpacket_bdts(input)?;
+    let (input, ts_last_pkt) = get_tpacket_bdts(input)?;
+
+    Ok((
+        input,
+        TpacketBDHeader {
+            block_status,
+            num_pkts,
+            offset_to_first_pkt,
+            blk_len,
+            seq_num,
+            ts_first_pkt,
+            ts_last_pkt,
+        },
+    ))
+}
 
 #[inline]
-named!(
-    get_tpacket_bdts<TpacketBDTS>,
-    do_parse!(ts_sec: le_u32 >> ts_nsec: le_u32 >> (TpacketBDTS { ts_sec, ts_nsec }))
-);
+fn get_tpacket_bdts(input: &[u8]) -> IResult<&[u8], TpacketBDTS> {
+    let (input, ts_sec) = le_u32(input)?;
+    let (input, ts_nsec) = le_u32(input)?;
+    Ok((input, TpacketBDTS { ts_sec, ts_nsec }))
+}
 
 #[inline]
-named!(
-    get_tpacket_hdr_variant1<TpacketHdrVariant1>,
-    do_parse!(
-        tp_rxhash: le_u32
-            >> tp_vlan_tci: le_u32
-            >> tp_vlan_tpid: le_u16
-            >> tp_padding: le_u16
-            >> (TpacketHdrVariant1 {
-                tp_rxhash,
-                tp_vlan_tci,
-                tp_vlan_tpid,
-                tp_padding
-            })
-    )
-);
+pub fn get_tpacket_hdr_variant1(input: &[u8]) -> IResult<&[u8], TpacketHdrVariant1> {
+    let (input, tp_rxhash) = le_u32(input)?;
+    let (input, tp_vlan_tci) = le_u32(input)?;
+    let (input, tp_vlan_tpid) = le_u16(input)?;
+    let (input, tp_padding) = le_u16(input)?;
+
+    Ok((
+        input,
+        TpacketHdrVariant1 {
+            tp_rxhash,
+            tp_vlan_tci,
+            tp_vlan_tpid,
+            tp_padding,
+        },
+    ))
+}
 
 #[inline]
-named!(
-    pub get_tpacket3_hdr<Tpacket3Hdr>,
-    do_parse!(
-        tp_next_offset: le_u32 >> tp_sec: le_u32 >> tp_nsec: le_u32 >> tp_snaplen: le_u32
-            >> tp_len: le_u32 >> tp_status: le_u32 >> tp_mac: le_u16 >> tp_net: le_u16
-            >> hv1: get_tpacket_hdr_variant1 >> (Tpacket3Hdr {
+pub fn get_tpacket3_hdr(input: &[u8]) -> IResult<&[u8], Tpacket3Hdr> {
+    let (input, tp_next_offset) = le_u32(input)?;
+    let (input, tp_sec) = le_u32(input)?;
+    let (input, tp_nsec) = le_u32(input)?;
+    let (input, tp_snaplen) = le_u32(input)?;
+    let (input, tp_len) = le_u32(input)?;
+    let (input, tp_status) = le_u32(input)?;
+    let (input, tp_mac) = le_u16(input)?;
+    let (input, tp_net) = le_u16(input)?;
+    let (input, hv1) = get_tpacket_hdr_variant1(input)?;
+
+    Ok((
+        input,
+        Tpacket3Hdr {
             tp_next_offset,
             tp_sec,
             tp_nsec,
@@ -179,7 +197,7 @@ named!(
             tp_status,
             tp_mac,
             tp_net,
-            hv1
-        })
-    )
-);
+            hv1,
+        },
+    ))
+}
