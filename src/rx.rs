@@ -270,7 +270,7 @@ impl Ring {
             )
         };
 
-        let block_desc = match tpacket3::get_tpacket_block_desc(&block[..]) {
+        let block_desc = match tpacket3::get_tpacket_block_desc(block) {
             Ok(x) => x,
             Err(_) => {
                 return None;

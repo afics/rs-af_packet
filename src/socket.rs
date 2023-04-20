@@ -31,8 +31,7 @@ impl IfReq {
 
     fn from_short(i: c_short) -> IfReq {
         let mut req = IfReq::default();
-        //TODO: find a better way to do this
-        let bytes: [u8; 2] = unsafe { mem::transmute(i) };
+        let bytes: [u8; 2] = i.to_ne_bytes();
         req.data[0] = bytes[0];
         req.data[1] = bytes[1];
         req
