@@ -254,7 +254,7 @@ impl Ring {
         };
 
         unsafe {
-            poll(&mut pfd, 1, -1);
+            poll(&mut pfd, 1, 100); // set timout to 100ms
         }
     }
 
